@@ -16,12 +16,8 @@ import { useAuth } from '@/lib/auth'
 
 import { LLMModel, LLMModelConfig } from '@/lib/models'
 import modelsList from '@/lib/models.json'
-import templates, { TemplateId } from '@/lib/templates';
-
-import { ExecutionResult } from './api/sandbox/route';
 
 export type Message = {
-  // id: string
   role: 'user' | 'assistant'
   content: string
   meta?: {
@@ -32,42 +28,26 @@ export type Message = {
 
 export default function Home() {
   const [chatInput, setChatInput] = useLocalStorage('chat', '')
-  const [selectedTemplate, setSelectedTemplate] = useState<'auto' | TemplateId>('auto')
   const [languageModel, setLanguageModel] = useLocalStorage<LLMModelConfig>('languageModel', {
     model: 'claude-3-5-sonnet-20240620'
   })
 
   const posthog = usePostHog()
 
-  const [result, setResult] = useState<ExecutionResult>()
   const [messages, setMessages] = useState<Message[]>([])
 
   const [isAuthDialogOpen, setAuthDialog] = useState(false)
   const { session, apiKey } = useAuth(setAuthDialog)
 
   const currentModel = modelsList.models.find(model => model.id === languageModel.model)
-  const currentTemplate = selectedTemplate === 'auto' ? templates : { [selectedTemplate]: templates[selectedTemplate] }
 
   const { object: artifact, submit, isLoading, stop, error } = useObject({
     api: '/api/chat',
     schema,
     onFinish: async ({ object: artifact, error }) => {
       if (!error) {
-        // send it to /api/sandbox
         console.log('artifact', artifact)
-
-        const response = await fetch('/api/sandbox', {
-          method: 'POST',
-          body: JSON.stringify({
-            artifact,
-            userID: session?.user?.id,
-            apiKey
-          })
-        })
-
-        const result = await response.json()
-        console.log('result', result)
-        setResult(result)
+        // We don't need to call the /api/sandbox endpoint anymore
       }
     }
   })
@@ -85,7 +65,7 @@ export default function Home() {
     }
   }, [artifact])
 
-  function handleSubmitAuth (e: React.FormEvent<HTMLFormElement>) {
+  function handleSubmitAuth(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
 
     if (!session) {
@@ -99,7 +79,6 @@ export default function Home() {
     submit({
       userID: session?.user?.id,
       prompt: chatInput,
-      template: currentTemplate,
       model: currentModel,
       config: languageModel,
     })
@@ -111,34 +90,33 @@ export default function Home() {
 
     addMessage({
       role: 'assistant',
-      content: 'Generating artifact...',
+      content: 'Generating response...',
     })
 
     setChatInput('')
 
     posthog.capture('chat_submit', {
-      template: selectedTemplate,
       model: languageModel.model,
     })
   }
 
-  function addMessage (message: Message) {
+  function addMessage(message: Message) {
     setMessages(previousMessages => [...previousMessages, message])
   }
 
-  function handleSaveInputChange (e: React.ChangeEvent<HTMLInputElement>) {
+  function handleSaveInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     setChatInput(e.target.value)
   }
 
-  function logout () {
+  function logout() {
     supabase ? supabase.auth.signOut() : console.warn('Supabase is not initialized')
   }
 
-  function handleLanguageModelChange (e: LLMModelConfig) {
+  function handleLanguageModelChange(e: LLMModelConfig) {
     setLanguageModel({ ...languageModel, ...e })
   }
 
-  function handleGitHubClick () {
+  function handleGitHubClick() {
     window.open('https://github.com/e2b-dev/ai-artifacts', '_blank')
     posthog.capture('github_click')
   }
@@ -152,9 +130,6 @@ export default function Home() {
         session={session}
         showLogin={() => setAuthDialog(true)}
         signOut={logout}
-        templates={templates}
-        selectedTemplate={selectedTemplate}
-        onSelectedTemplateChange={setSelectedTemplate}
         models={modelsList.models}
         languageModel={languageModel}
         onLanguageModelChange={handleLanguageModelChange}
@@ -175,8 +150,6 @@ export default function Home() {
         <SideView
           isLoading={isLoading}
           artifact={artifact as ArtifactSchema}
-          result={result}
-          selectedTemplate={artifact?.template as TemplateId}
         />
       </div>
     </main>

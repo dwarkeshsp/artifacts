@@ -83,33 +83,7 @@ export default function NavBar({
         </div>
       </div>
       <div className="flex items-end border-b border-gray-300 px-4 py-2 space-x-2">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="template">Persona</Label>
-          <Select name="template" defaultValue={selectedTemplate} onValueChange={onSelectedTemplateChange}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Select a persona" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectLabel>Persona</SelectLabel>
-                <SelectItem value="auto">
-                  <div className="flex items-center space-x-2">
-                    <Sparkles className="flex" width={16} height={16} />
-                    <span>Auto</span>
-                  </div>
-                </SelectItem>
-                {Object.entries(templates).map(([templateId, template]) => (
-                  <SelectItem key={templateId} value={templateId}>
-                    <div className="flex items-center space-x-2">
-                      <Image className="flex" src={`/thirdparty/templates/${templateId}.svg`} alt={templateId} width={16} height={16} />
-                      <span>{template.name}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
+
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="languageModel">Model</Label>
           <Select name="languageModel" defaultValue={languageModel.model} onValueChange={(e) => onLanguageModelChange({ model: e })}>
@@ -131,7 +105,7 @@ export default function NavBar({
                     ))}
                   </SelectGroup>
                 )
-              )}
+                )}
             </SelectContent>
           </Select>
         </div>
