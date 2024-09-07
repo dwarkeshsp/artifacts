@@ -27,20 +27,26 @@ export async function POST(req: Request) {
     })
   }
 
-  const { prompt, userID, template, model, config }: { prompt: string, userID: string, template: Templates, model: LLMModel, config: LLMModelConfig } = await req.json()
-  console.log('userID', userID)
-  // console.log('template', template)
-  console.log('model', model)
-  console.log('config', config)
+  const { prompt, userID, model, config, currentArtifact }: {
+    prompt: string,
+    userID: string,
+    model: LLMModel,
+    config: LLMModelConfig,
+    currentArtifact?: ArtifactSchema
+  } = await req.json()
 
   const { model: modelNameString, apiKey: modelApiKey, ...modelParams } = config
   const modelClient = getModelClient(model, config)
 
+  const systemPrompt = `You are a knowledgeable research assistant for a podcast host. Your role is to provide information and analysis on various topics. You should respond to queries and help prepare questions for future podcast guests. ${currentArtifact ? "You are updating an existing artifact. Modify the content based on the user's request." : "You are creating a new artifact."}`
+
   const stream = await streamObject({
     model: modelClient as LanguageModel,
     schema,
-    system: `You are a skilled research assitant for podcast host Dwarkesh Patel.`,
-    prompt,
+    system: systemPrompt,
+    prompt: currentArtifact
+      ? `Current artifact:\n${JSON.stringify(currentArtifact, null, 2)}\n\nUser request: ${prompt}`
+      : prompt,
     mode: getDefaultMode(model),
     ...modelParams,
   })

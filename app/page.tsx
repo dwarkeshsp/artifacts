@@ -76,11 +76,14 @@ export default function Home() {
       stop()
     }
 
+    const currentArtifact = artifact ? { ...artifact } : undefined
+
     submit({
       userID: session?.user?.id,
       prompt: chatInput,
       model: currentModel,
       config: languageModel,
+      currentArtifact, // Pass the current artifact to the API
     })
 
     addMessage({
